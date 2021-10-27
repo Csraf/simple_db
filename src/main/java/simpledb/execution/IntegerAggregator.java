@@ -2,12 +2,11 @@ package simpledb.execution;
 
 import simpledb.common.DbException;
 import simpledb.common.Type;
-import simpledb.storage.Field;
-import simpledb.storage.IntField;
-import simpledb.storage.Tuple;
-import simpledb.storage.TupleDesc;
+import simpledb.storage.*;
 import simpledb.transaction.TransactionAbortedException;
 
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -16,11 +15,13 @@ import java.util.*;
 public class IntegerAggregator implements Aggregator {
 
     private static final long serialVersionUID = 1L;
-    private int gbfield;
-    private Type gbfieldtype;
-    private int afield;
-    private Op what;
-    private HashMap<Field, List<Integer>> group;
+    private final int gbfield;
+    private final int afield;
+    private final Type gbfieldtype;
+    private TupleDesc td;
+    private final Op what;
+    private HashMap<Field, IntegerAggregatorResult> groupMap= new HashMap<>();
+    private static final Field NO_GROUP = new IntField(-1);
 
     /**
      * Aggregate constructor
@@ -43,6 +44,12 @@ public class IntegerAggregator implements Aggregator {
         this.gbfieldtype = gbfieldtype;
         this.afield = afield;
         this.what = what;
+        if(gbfield == NO_GROUPING){
+            td = new TupleDesc(new Type[]{Type.INT_TYPE});
+        }
+        else{
+            td = new TupleDesc(new Type[]{this.gbfieldtype, Type.INT_TYPE});
+        }
     }
 
     /**
@@ -54,16 +61,25 @@ public class IntegerAggregator implements Aggregator {
      */
     public void mergeTupleIntoGroup(Tuple tup) {
         // some code goes here
-        Field groupValue = tup.getField(gbfield);
-        Field aggregatorValue = tup.getField(afield);
-        Integer value = ((IntField)aggregatorValue).getValue();
-        if(group.containsKey(groupValue)){
-            group.get(groupValue).add(value);
+        Field aggField = tup.getField(afield);
+        Integer newVal = ((IntField)aggField).getValue();
+        if(gbfield == NO_GROUPING){
+            doMergeTupleIntoGroup(NO_GROUP, newVal);
         }
         else{
-            List<Integer> aggs = new ArrayList<>();
-            aggs.add(value);
-            group.put(groupValue, aggs);
+            Field groupField = tup.getField(gbfield);
+            doMergeTupleIntoGroup(groupField, newVal);
+        }
+    }
+
+    private void doMergeTupleIntoGroup(Field groupField , Integer newVal){
+        if(groupMap.containsKey(groupField)){
+            groupMap.get(groupField).merge(newVal);
+        }
+        else{
+            IntegerAggregatorResult iar = new IntegerAggregatorResult(this.what);
+            iar.merge(newVal);
+            groupMap.put(groupField, iar);
         }
     }
 
@@ -77,42 +93,57 @@ public class IntegerAggregator implements Aggregator {
      */
     public OpIterator iterator() {
         // some code goes here
-        throw new
-        UnsupportedOperationException("please implement me for lab2");
+        List<Tuple> tuples = new ArrayList<>();
+        for (Field f : groupMap.keySet()) {
+            IntegerAggregatorResult iar = groupMap.get(f);
+            Tuple tuple = new Tuple(td);
+            if(gbfield == NO_GROUPING){
+                tuple.setField(0,new IntField((int) iar.curVal));
+            }
+            else{
+                tuple.setField(0, f);
+                tuple.setField(1, new IntField((int) iar.curVal));
+            }
+            tuples.add(tuple);
+        }
+        return new TupleIterator(td, tuples);
     }
 
+    class IntegerAggregatorResult {
+        private int count = 0;
+        private float curVal = 0;
+        private final Op what;
 
-    class IntegerAggregatorIterator implements OpIterator{
-
-        @Override
-        public void open() throws DbException, TransactionAbortedException {
-
+        public IntegerAggregatorResult(Op what){
+            this.what = what;
         }
 
-        @Override
-        public boolean hasNext() throws DbException, TransactionAbortedException {
-            return false;
-        }
+        public void merge(int newVal){
+            count++;
+            if(count == 1){
+                if(what == Op.COUNT){
+                    curVal = count;
+                }
+                else curVal = newVal;
+                return;
+            }
 
-        @Override
-        public Tuple next() throws DbException, TransactionAbortedException, NoSuchElementException {
-            return null;
-        }
-
-        @Override
-        public void rewind() throws DbException, TransactionAbortedException {
-
-        }
-
-        @Override
-        public TupleDesc getTupleDesc() {
-            return null;
-        }
-
-        @Override
-        public void close() {
-
+            switch (what){
+                case AVG:
+                    curVal = (curVal*(count-1)+newVal) / count;
+                    break;
+                case MAX:
+                    curVal = Math.max(curVal, newVal);
+                    break;
+                case MIN:
+                    curVal = Math.min(curVal, newVal);
+                    break;
+                case SUM:
+                    curVal = curVal + newVal;
+                    break;
+                case COUNT:
+                    curVal = count;
+            }
         }
     }
-
 }
