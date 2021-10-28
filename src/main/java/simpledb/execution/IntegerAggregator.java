@@ -18,7 +18,7 @@ public class IntegerAggregator implements Aggregator {
     private final int gbfield;
     private final int afield;
     private final Type gbfieldtype;
-    private TupleDesc td;
+    private final TupleDesc td;
     private final Op what;
     private HashMap<Field, IntegerAggregatorResult> groupMap= new HashMap<>();
     private static final Field NO_GROUP = new IntField(-1);
