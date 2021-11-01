@@ -2,7 +2,6 @@ package simpledb.execution;
 
 import simpledb.common.DbException;
 import simpledb.common.Type;
-import simpledb.storage.IntField;
 import simpledb.storage.Tuple;
 import simpledb.storage.TupleDesc;
 import simpledb.transaction.TransactionAbortedException;
@@ -18,13 +17,14 @@ import java.util.NoSuchElementException;
 public class Aggregate extends Operator {
 
     private static final long serialVersionUID = 1L;
+
     private OpIterator child;
-    private int afield;
-    private int gfield;
-    private Aggregator.Op aop;
-    private Aggregator aggregator;
-    private OpIterator aggregatorIterator;
-    private TupleDesc td;
+    private final int afield;
+    private final int gfield;
+    private final Aggregator.Op aop;
+    private final TupleDesc td;
+    private final Aggregator aggregator;
+    private OpIterator aggIterator;
 
 
     /**
@@ -132,8 +132,8 @@ public class Aggregate extends Operator {
             Tuple next = child.next();
             aggregator.mergeTupleIntoGroup(next);
         }
-        aggregatorIterator = aggregator.iterator();
-        aggregatorIterator.open();
+        aggIterator = aggregator.iterator();
+        aggIterator.open();
     }
 
     /**
@@ -145,14 +145,14 @@ public class Aggregate extends Operator {
      */
     protected Tuple fetchNext() throws TransactionAbortedException, DbException {
         // some code goes here
-        if(aggregatorIterator.hasNext()) return aggregatorIterator.next();
+        if(aggIterator.hasNext()) return aggIterator.next();
         return null;
     }
 
     public void rewind() throws DbException, TransactionAbortedException {
         // some code goes here
-        close();
-        open();
+        aggIterator = aggregator.iterator();
+        aggIterator.open();
     }
 
     /**
@@ -173,8 +173,8 @@ public class Aggregate extends Operator {
 
     public void close() {
         // some code goes here
-        aggregatorIterator.close();
         child.close();
+        aggIterator.close();
         super.close();
     }
 

@@ -21,7 +21,7 @@ public class StringAggregator implements Aggregator {
     private final Op what;
     private final TupleDesc td;
     private Map<Field, StringAggregatorResult> groupMap = new HashMap<>();
-    private static final Field NO_GROUP = new StringField("no_group", Type.STRING_LEN);
+    private static final Field NO_GROUP = new IntField(-1);
 
 
 
