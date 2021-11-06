@@ -38,11 +38,12 @@ public class App
             default:
                 System.out.println("4");
         }
+        System.out.println("123123");
     }
 
     public static void main( String[] args ) throws IOException {
 
-//        up(1);
+        up(1);
 
         List<Integer> integers = new ArrayList<>();
 

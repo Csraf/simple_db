@@ -60,7 +60,6 @@ public class HeapFile implements DbFile {
     public int getId() {
         // some code goes here
         return f.getAbsolutePath().hashCode();
-//        throw new UnsupportedOperationException("implement this");
     }
 
     /**
@@ -71,7 +70,6 @@ public class HeapFile implements DbFile {
     public TupleDesc getTupleDesc() {
         // some code goes here
         return td;
-//        throw new UnsupportedOperationException("implement this");
     }
 
     // see DbFile.java for javadocs
@@ -111,16 +109,23 @@ public class HeapFile implements DbFile {
     public List<Page> insertTuple(TransactionId tid, Tuple t)
             throws DbException, IOException, TransactionAbortedException {
         // some code goes here
-        return null;
         // not necessary for lab1
+
+        return null;
     }
 
     // see DbFile.java for javadocs
     public ArrayList<Page> deleteTuple(TransactionId tid, Tuple t) throws DbException,
             TransactionAbortedException {
         // some code goes here
-        return null;
         // not necessary for lab1
+        ArrayList<Page> pages = new ArrayList<>();
+        RecordId recordId = t.getRecordId();
+        PageId pageId = recordId.getPageId();
+        HeapPage page = (HeapPage) Database.getBufferPool().getPage(tid, pageId, null);
+        page.deleteTuple(t);
+        pages.add(page);
+        return pages;
     }
 
     // see DbFile.java for javadocs

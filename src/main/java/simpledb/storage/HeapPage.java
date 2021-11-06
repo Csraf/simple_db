@@ -249,6 +249,13 @@ public class HeapPage implements Page {
     public void deleteTuple(Tuple t) throws DbException {
         // some code goes here
         // not necessary for lab1
+        RecordId recordId = t.getRecordId();
+        int tpNo = recordId.getTupleNumber();
+        if(isSlotUsed(tpNo)){
+             tuples[tpNo] = null;
+             markSlotUsed(tpNo, false);
+        }
+        else throw new DbException("tuple not in the page");
     }
 
     /**
@@ -261,6 +268,17 @@ public class HeapPage implements Page {
     public void insertTuple(Tuple t) throws DbException {
         // some code goes here
         // not necessary for lab1
+        if(!t.getTupleDesc().equals(td) ) throw new DbException("tupleDesc is not fit the page");
+        if(getNumEmptySlots() == 0) throw new DbException("no empty slot in the page");
+        for (int i = 0; i < header.length; i++) {
+            for (int j = 0; j < 8; j++) {
+                if(i*8+j < numSlots && !isSlotUsed(i*8+j)){
+                    t.setRecordId(new RecordId(pid, i*8+j));
+                    tuples[i*8+j] = t;
+                    markSlotUsed(i*8+j, true);
+                }
+            }
+        }
     }
 
     /**
@@ -309,6 +327,14 @@ public class HeapPage implements Page {
     private void markSlotUsed(int i, boolean value) {
         // some code goes here
         // not necessary for lab1
+        byte b = header[i/8];
+        if(value){ // 槽设置 1
+            b = (byte) (b | (0x1 << (i%8)));
+        }
+        else{      // 槽设置 0
+            b = (byte) (b & (~(0x1 << (i%8))));
+        }
+        header[i/8] = b;
     }
 
     /**
