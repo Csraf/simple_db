@@ -9,9 +9,7 @@ import simpledb.transaction.TransactionId;
 
 import java.io.*;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -48,8 +46,6 @@ public class BufferPool {
     public BufferPool(int numPages) {
         // some code goes here
         BufferPool.numPages = numPages;
-        System.out.println("new a bufferPool");
-        System.out.println("numPages : "+numPages);
     }
     
     public static int getPageSize() {
@@ -156,6 +152,8 @@ public class BufferPool {
         throws DbException, IOException, TransactionAbortedException {
         // some code goes here
         // not necessary for lab1
+        HeapFile heapFile = (HeapFile)Database.getCatalog().getDatabaseFile(tableId);
+        List<Page> pages = heapFile.insertTuple(tid, t);
     }
 
     /**
@@ -175,6 +173,11 @@ public class BufferPool {
         throws DbException, IOException, TransactionAbortedException {
         // some code goes here
         // not necessary for lab1
+
+        int tableId = t.getRecordId().getPageId().getTableId();
+        HeapFile heapFile = (HeapFile)Database.getCatalog().getDatabaseFile(tableId);
+        ArrayList<Page> pages = heapFile.deleteTuple(tid, t);
+
     }
 
     /**

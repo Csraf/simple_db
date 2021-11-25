@@ -95,6 +95,13 @@ public class HeapFile implements DbFile {
     public void writePage(Page page) throws IOException {
         // some code goes here
         // not necessary for lab1
+        int pgNo = page.getId().getPageNumber();
+        int pageSize = Database.getBufferPool().getPageSize();
+        byte[] data = page.getPageData();
+        RandomAccessFile rf = new RandomAccessFile(f, "rw");
+        rf.seek(pgNo*pageSize);
+        rf.write(data);
+        rf.close();
     }
 
     /**
@@ -111,7 +118,32 @@ public class HeapFile implements DbFile {
         // some code goes here
         // not necessary for lab1
 
-        return null;
+        List<Page> pages = new ArrayList<>();
+        int tableId = getId();
+        int numPages = numPages();
+        int pageSize = BufferPool.getPageSize();
+
+        for (int i = 0; i <numPages; i++) {
+            // 迭代当前页面，寻找一个空槽，然后将页面刷新回磁盘
+            HeapPageId pid = new HeapPageId(tableId, i);
+            HeapPage page = (HeapPage)Database.getBufferPool().getPage(tid, pid, null);
+            int numEmptySlots = page.getNumEmptySlots();
+            if(numEmptySlots > 0) {
+                page.insertTuple(t);
+                pages.add(page);
+                writePage(page); // 刷新回到磁盘
+                return pages;
+            }
+        }
+
+        // 创建新的一页
+        HeapPageId newPid = new HeapPageId(tableId, numPages);
+        HeapPage newPage = new HeapPage(newPid, new byte[pageSize]);
+        newPage.insertTuple(t);
+        pages.add(newPage);
+        writePage(newPage);
+
+        return pages;
     }
 
     // see DbFile.java for javadocs
