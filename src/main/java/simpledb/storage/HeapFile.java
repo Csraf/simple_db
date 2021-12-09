@@ -131,6 +131,8 @@ public class HeapFile implements DbFile {
             if(numEmptySlots > 0) {
                 page.insertTuple(t);
                 pages.add(page);
+                // TODO 暂时不需要事务优化，直接刷新回到磁盘
+                // page.markDirty(true, tid);
                 writePage(page); // 刷新回到磁盘
                 return pages;
             }
@@ -141,6 +143,8 @@ public class HeapFile implements DbFile {
         HeapPage newPage = new HeapPage(newPid, new byte[pageSize]);
         newPage.insertTuple(t);
         pages.add(newPage);
+        // TODO 暂时不需要事务优化，直接刷新回到磁盘
+        // page.markDirty(true, tid);
         writePage(newPage);
 
         return pages;
@@ -157,6 +161,10 @@ public class HeapFile implements DbFile {
         HeapPage page = (HeapPage) Database.getBufferPool().getPage(tid, pageId, null);
         page.deleteTuple(t);
         pages.add(page);
+        // TODO 暂时不需要刷新回到磁盘
+        // writePage(page);
+        // TODO 暂时不需要事务优化，直接刷新回到磁盘
+        // page.markDirty(true, tid);
         return pages;
     }
 

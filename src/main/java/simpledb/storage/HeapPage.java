@@ -4,6 +4,7 @@ import simpledb.common.Database;
 import simpledb.common.DbException;
 import simpledb.common.Debug;
 import simpledb.common.Catalog;
+import simpledb.transaction.Transaction;
 import simpledb.transaction.TransactionId;
 
 import java.util.*;
@@ -26,6 +27,7 @@ public class HeapPage implements Page {
 
     byte[] oldData;
     private final Byte oldDataLock = (byte) 0;
+    LinkedList<TransactionId> dirtyTrans = new LinkedList<>(); // 标记当前页面被哪些事务占用, 这些事务必须导致该页面为脏页
 
     /**
      * Create a HeapPage from a set of bytes of data read from disk.
@@ -294,6 +296,8 @@ public class HeapPage implements Page {
     public void markDirty(boolean dirty, TransactionId tid) {
         // some code goes here
         // not necessary for lab1
+        if (dirty) dirtyTrans.add(tid);
+        else dirtyTrans.remove(tid);
     }
 
     /**
@@ -302,6 +306,7 @@ public class HeapPage implements Page {
     public TransactionId isDirty() {
         // some code goes here
         // Not necessary for lab1
+        if (dirtyTrans.size() > 0) return dirtyTrans.getLast();
         return null;
     }
 
