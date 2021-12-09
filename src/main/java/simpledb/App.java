@@ -22,7 +22,7 @@ import java.util.Objects;
  */
 public class App 
 {
-
+    // this is new boy
 
     private static void up(int n){
         switch (n){
